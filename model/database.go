@@ -105,6 +105,7 @@ func (db *Database) GetAllElements() ([]*Book, error) {
 	return books, nil
 }
 
+// Delete Element
 func (db *Database) DeleteElementByID(mbook *Book) error {
 	if mbook == nil {
 		return errors.New("BookIsNull")
@@ -118,6 +119,8 @@ func (db *Database) DeleteElementByID(mbook *Book) error {
 	}
 	return nil
 }
+
+// Update Element
 func (db *Database) UpdateElementbyID(name string, mBook *Book) error {
 	if (mBook == nil) || (name == "") {
 		return errors.New("BookIsNull")
@@ -130,13 +133,14 @@ func (db *Database) UpdateElementbyID(name string, mBook *Book) error {
 			{Key: "name", Value: name},
 		}},
 	}
-
 	_, err := db.Collection.UpdateOne(db.Ctx, filter, update)
 	if err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
+
+// Prints the Database
 func (db *Database) PrintDatabase() error {
 	books, err := db.GetAllElements()
 	if err != nil {
