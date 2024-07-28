@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"main.go/model"
 )
 
@@ -25,12 +26,17 @@ func main() {
 	}
 
 	fmt.Println("MongoDB connected")
+
 	err = db.SetCollection("books")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	if err != nil {
-		log.Fatal(err)
+	db.PrintDatabase()
+	ID, _ := primitive.ObjectIDFromHex("66a631c024eb8e6658839297")
+	uBook := model.Book{
+		ObjectID: ID,
 	}
+	db.UpdateElementbyID("Notr Dame'nin Kamburu", &uBook)
+	db.PrintDatabase()
+
 }

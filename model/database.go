@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -64,7 +65,11 @@ func (db *Database) InsertDocument(mBook ...*Book) error {
 	return nil
 }
 
+// Finding element by ID
 func (db *Database) FindOneElementByID(mbook *Book) (*Book, error) {
+	if mbook == nil {
+		return nil, errors.New("BookIsNull")
+	}
 	filter := bson.D{
 		{Key: "_id", Value: mbook.ObjectID},
 	}
@@ -82,7 +87,7 @@ func (db *Database) FindOneElementByID(mbook *Book) (*Book, error) {
 }
 
 // Get Element
-func (db *Database) GetFullElement() ([]*Book, error) {
+func (db *Database) GetAllElements() ([]*Book, error) {
 	filter := bson.D{}
 	cursor, err := db.Collection.Find(db.Ctx, filter)
 	if err != nil {
@@ -98,4 +103,48 @@ func (db *Database) GetFullElement() ([]*Book, error) {
 		books = append(books, &result)
 	}
 	return books, nil
+}
+
+func (db *Database) DeleteElementByID(mbook *Book) error {
+	if mbook == nil {
+		return errors.New("BookIsNull")
+	}
+	filter := bson.D{
+		{Key: "_id", Value: mbook.ObjectID},
+	}
+	_, err := db.Collection.DeleteOne(db.Ctx, filter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (db *Database) UpdateElementbyID(name string, mBook *Book) error {
+	if (mBook == nil) || (name == "") {
+		return errors.New("BookIsNull")
+	}
+	filter := bson.D{
+		{Key: "_id", Value: mBook.ObjectID},
+	}
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "name", Value: name},
+		}},
+	}
+
+	_, err := db.Collection.UpdateOne(db.Ctx, filter, update)
+	if err != nil {
+		return nil
+	}
+	return nil
+}
+func (db *Database) PrintDatabase() error {
+	books, err := db.GetAllElements()
+	if err != nil {
+		return errors.New("NotGetElement")
+	}
+	for _, v := range books {
+		pattern := fmt.Sprintf("Id : %v\nName : %v\nAuthor : %v\nPages : %v\nTopic : %v\n", v.ObjectID, v.Name, v.Author, v.Pages, v.Topic)
+		fmt.Println(pattern)
+	}
+	return nil
 }
