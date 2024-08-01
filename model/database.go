@@ -120,17 +120,20 @@ func (db *Database) DeleteElementByID(mbook *Book) error {
 	return nil
 }
 
-// Update Element
-func (db *Database) UpdateElementbyID(name string, mBook *Book) error {
-	if (mBook == nil) || (name == "") {
+// Update Element's Name
+func (db *Database) UpdateElementbyID(updateBook *Book, filterBook *Book) error {
+	if (filterBook == nil) || (updateBook == nil) {
 		return errors.New("BookIsNull")
 	}
 	filter := bson.D{
-		{Key: "_id", Value: mBook.ObjectID},
+		{Key: "_id", Value: filterBook.ObjectID},
 	}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
-			{Key: "name", Value: name},
+			{Key: "name", Value: updateBook.Name},
+			{Key: "author", Value: updateBook.Author},
+			{Key: "pages", Value: updateBook.Pages},
+			{Key: "topic", Value: updateBook.Topic},
 		}},
 	}
 	_, err := db.Collection.UpdateOne(db.Ctx, filter, update)
