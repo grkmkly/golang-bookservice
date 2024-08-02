@@ -52,15 +52,23 @@ func (db *Database) SetCollection(coll string) error {
 }
 
 // Insert Document
-func (db *Database) InsertDocument(mBook ...*Book) error {
-	if len(mBook) == 0 {
-		return errors.New("UnexpectedLength")
-	}
-	for _, value := range mBook {
-		_, err := db.Collection.InsertOne(db.Ctx, value)
+func (db *Database) InsertDocument(item interface{}) error {
+
+	switch x := item.(type) {
+	case *Book:
+		db.SetCollection("books")
+		_, err := db.Collection.InsertOne(db.Ctx, x)
 		if err != nil {
 			return err
 		}
+	case *User:
+		db.SetCollection("users")
+		_, err := db.Collection.InsertOne(db.Ctx, x)
+		if err != nil {
+			return err
+		}
+	default:
+		return errors.New("TypeNotFound")
 	}
 	return nil
 }
