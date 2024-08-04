@@ -46,7 +46,7 @@ func updateBook(db *model.Database) http.HandlerFunc {
 			log.Fatal(err)
 		}
 
-		books, err := db.GetAllElements()
+		books, err := db.GetAllElements(model.Book{})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -58,24 +58,26 @@ func updateBook(db *model.Database) http.HandlerFunc {
 		}
 
 		for _, v := range books {
-			if v.ObjectID.Hex() == bookId {
+			switch x := v.(type) {
+			case model.Book:
+				if x.ObjectID.Hex() == bookId {
 
-				err := db.UpdateElementbyID(&updateBook, v)
-				if err != nil {
-					log.Fatal(err)
-				}
-				updateBook.ObjectID = v.ObjectID
+					err := db.UpdateElementbyID(&updateBook, &x)
+					if err != nil {
+						log.Fatal(err)
+					}
+					updateBook.ObjectID = x.ObjectID
 
-				json, err := json.Marshal(&updateBook)
-				if err != nil {
-					log.Fatal(err)
+					json, err := json.Marshal(&updateBook)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Fprintf(w, string(json)+"%v", "updated")
+					break
 				}
-				fmt.Fprintf(w, string(json)+"%v", "updated")
-				break
 			}
 		}
 	}
-
 }
 
 func getBooks(db *model.Database) http.HandlerFunc {
@@ -83,7 +85,7 @@ func getBooks(db *model.Database) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 
-		books, err := db.GetAllElements()
+		books, err := db.GetAllElements(model.Book{})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -102,23 +104,26 @@ func getBook(db *model.Database) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		vars := mux.Vars(r)
 
-		books, err := db.GetAllElements()
+		books, err := db.GetAllElements(model.Book{})
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, v := range books {
-			if v.ObjectID.Hex() == vars["id"] {
-				book, err := db.FindOneElementByID(v)
-				if err != nil {
-					log.Fatal(err)
+			switch x := v.(type) {
+			case model.Book:
+				if x.ObjectID.Hex() == vars["id"] {
+					book, err := db.FindOneElementByID(&x)
+					if err != nil {
+						log.Fatal(err)
+					}
+					json, err := json.Marshal(&book)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Fprint(w, string(json))
+					isHave = true
+					break
 				}
-				json, err := json.Marshal(&book)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Fprint(w, string(json))
-				isHave = true
-				break
 			}
 		}
 		if !isHave {
@@ -134,22 +139,26 @@ func deleteBook(db *model.Database) http.HandlerFunc {
 		vars := mux.Vars(r)
 		bookId := vars["id"]
 
-		books, err := db.GetAllElements()
+		books, err := db.GetAllElements(model.Book{})
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		for _, v := range books {
-			if v.ObjectID.Hex() == bookId {
-				err := db.DeleteElementByID(v)
-				if err != nil {
-					log.Fatal(err)
+			switch x := v.(type) {
+			case model.Book:
+				if x.ObjectID.Hex() == bookId {
+					err := db.DeleteElementByID(&x)
+					if err != nil {
+						log.Fatal(err)
+					}
+					json, err := json.Marshal(v)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Fprintf(w, string(json)+"%v", "deleted")
+					break
 				}
-				json, err := json.Marshal(v)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Fprintf(w, string(json)+"%v", "deleted")
-				break
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -53,17 +54,17 @@ func (db *Database) SetCollection(coll string) error {
 
 // Insert Document
 func (db *Database) InsertDocument(item interface{}) error {
+	typeInterface := db.ControlItemTypeandSet(item)
+	switch typeInterface {
+	case reflect.TypeOf(Book{}):
 
-	switch x := item.(type) {
-	case *Book:
-		db.SetCollection("books")
-		_, err := db.Collection.InsertOne(db.Ctx, x)
+		_, err := db.Collection.InsertOne(db.Ctx, item)
 		if err != nil {
 			return err
 		}
-	case *User:
-		db.SetCollection("users")
-		_, err := db.Collection.InsertOne(db.Ctx, x)
+
+	case reflect.TypeOf(User{}):
+		_, err := db.Collection.InsertOne(db.Ctx, item)
 		if err != nil {
 			return err
 		}
@@ -71,6 +72,21 @@ func (db *Database) InsertDocument(item interface{}) error {
 		return errors.New("TypeNotFound")
 	}
 	return nil
+}
+
+func (db *Database) ControlItemTypeandSet(item interface{}) interface{} {
+
+	ft := reflect.TypeOf(item)
+	if ft.Kind() == reflect.Ptr {
+		ft = ft.Elem()
+	}
+	switch ft {
+	case reflect.TypeOf(Book{}):
+		db.SetCollection("books")
+	case reflect.TypeOf(User{}):
+		db.SetCollection("users")
+	}
+	return ft
 }
 
 // Finding element by ID
@@ -95,22 +111,41 @@ func (db *Database) FindOneElementByID(mbook *Book) (*Book, error) {
 }
 
 // Get Element
-func (db *Database) GetAllElements() ([]*Book, error) {
+func (db *Database) GetAllElements(item interface{}) ([]interface{}, error) {
+	typeInterface := db.ControlItemTypeandSet(item)
+
 	filter := bson.D{}
 	cursor, err := db.Collection.Find(db.Ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	var books []*Book
-	for cursor.Next(db.Ctx) {
-		var result Book
-		err = cursor.Decode(&result)
-		if err != nil {
-			return nil, err
+
+	switch typeInterface {
+	case reflect.TypeOf(Book{}):
+		var bookItems []interface{}
+		for cursor.Next(db.Ctx) {
+			var result Book
+			err = cursor.Decode(&result)
+			if err != nil {
+				return nil, err
+			}
+			bookItems = append(bookItems, result)
 		}
-		books = append(books, &result)
+		return bookItems, nil
+	case reflect.TypeOf(User{}):
+		var userItems []interface{}
+		for cursor.Next(db.Ctx) {
+			var result User
+			err = cursor.Decode(&result)
+			if err != nil {
+				return nil, err
+			}
+			userItems = append(userItems, result)
+		}
+		return userItems, nil
+	default:
+		return nil, errors.New("TypeProblem")
 	}
-	return books, nil
 }
 
 // Delete Element
@@ -128,7 +163,7 @@ func (db *Database) DeleteElementByID(mbook *Book) error {
 	return nil
 }
 
-// Update Element's Name
+// Update Element
 func (db *Database) UpdateElementbyID(updateBook *Book, filterBook *Book) error {
 	if (filterBook == nil) || (updateBook == nil) {
 		return errors.New("BookIsNull")
@@ -152,14 +187,22 @@ func (db *Database) UpdateElementbyID(updateBook *Book, filterBook *Book) error 
 }
 
 // Prints the Database
-func (db *Database) PrintDatabase() error {
-	books, err := db.GetAllElements()
+func (db *Database) PrintDatabase(item interface{}) error {
+	items, err := db.GetAllElements(item)
 	if err != nil {
 		return errors.New("NotGetElement")
 	}
-	for _, v := range books {
-		pattern := fmt.Sprintf("Id : %v\nName : %v\nAuthor : %v\nPages : %v\nTopic : %v\n", v.ObjectID, v.Name, v.Author, v.Pages, v.Topic)
-		fmt.Println(pattern)
+	for _, v := range items {
+		switch x := v.(type) {
+		case Book:
+			pattern := fmt.Sprintf("Id : %v\nName : %v\nAuthor : %v\nPages : %v\nTopic : %v\n", x.ObjectID, x.Name, x.Author, x.Pages, x.Topic)
+			fmt.Println(pattern)
+		case User:
+			pattern := fmt.Sprintf("Id : %v\nUserame : %v\nBooks : %v\n", x.ObjectID, x.Username, x.Books)
+			fmt.Println(pattern)
+		default:
+			fmt.Println("NotFoundType")
+		}
 	}
 	return nil
 }

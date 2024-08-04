@@ -40,10 +40,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	r := mux.NewRouter()
 	db.SetCollection("books")
-	api.RoutesBook(r, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//api.RoutesBook(r, db)
 	api.RoutesUser(r, db)
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)
