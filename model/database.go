@@ -90,28 +90,47 @@ func (db *Database) ControlItemTypeandSet(item interface{}) interface{} {
 }
 
 // Finding element by ID
-func (db *Database) FindOneElementByID(mbook *Book) (*Book, error) {
-	if mbook == nil {
-		return nil, errors.New("BookIsNull")
-	}
-	filter := bson.D{
-		{Key: "_id", Value: mbook.ObjectID},
-	}
-	result := db.Collection.FindOne(db.Ctx, filter)
-	if result == nil {
-		return nil, errors.New("ResultNotFound")
-	}
+func (db *Database) FindOneElementByID(item interface{}) (interface{}, error) {
+	//only set
+	db.ControlItemTypeandSet(item)
 
-	err := result.Decode(mbook)
-	if err != nil {
-		return nil, err
+	if x, ok := item.(Book); ok {
+		fmt.Print("Selam")
+		var book Book
+		filter := bson.D{
+			{Key: "_id", Value: x.ObjectID},
+		}
+		result := db.Collection.FindOne(db.Ctx, filter)
+		if result == nil {
+			return nil, errors.New("ResultNotFound")
+		}
+		err := result.Decode(&book)
+		if err != nil {
+			return nil, err
+		}
+		return book, nil
+	} else if x, ok := item.(User); ok {
+		fmt.Print("Selam")
+		var user User
+		filter := bson.D{
+			{Key: "_id", Value: x.ObjectID},
+		}
+		result := db.Collection.FindOne(db.Ctx, filter)
+		if result == nil {
+			return nil, errors.New("ResultNotFound")
+		}
+		err := result.Decode(&user)
+		if err != nil {
+			return nil, err
+		}
+		return user, nil
 	}
-
-	return mbook, nil
+	return nil, errors.New("ItemNotFound")
 }
 
 // Get Element
 func (db *Database) GetAllElements(item interface{}) ([]interface{}, error) {
+
 	typeInterface := db.ControlItemTypeandSet(item)
 
 	filter := bson.D{}
@@ -149,16 +168,27 @@ func (db *Database) GetAllElements(item interface{}) ([]interface{}, error) {
 }
 
 // Delete Element
-func (db *Database) DeleteElementByID(mbook *Book) error {
-	if mbook == nil {
-		return errors.New("BookIsNull")
-	}
-	filter := bson.D{
-		{Key: "_id", Value: mbook.ObjectID},
-	}
-	_, err := db.Collection.DeleteOne(db.Ctx, filter)
-	if err != nil {
-		return err
+func (db *Database) DeleteElementByID(item interface{}) error {
+	// only set
+	db.ControlItemTypeandSet(item)
+
+	switch x := item.(type) {
+	case Book:
+		filter := bson.D{
+			{Key: "_id", Value: x.ObjectID},
+		}
+		_, err := db.Collection.DeleteOne(db.Ctx, filter)
+		if err != nil {
+			return err
+		}
+	case User:
+		filter := bson.D{
+			{Key: "_id", Value: x.ObjectID},
+		}
+		_, err := db.Collection.DeleteOne(db.Ctx, filter)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -20,15 +20,6 @@ var db = &model.Database{
 	Ctx:      context.TODO(),
 }
 
-func deneme(item interface{}) {
-	switch x := item.(type) {
-	case model.Book:
-		fmt.Print(x.Name)
-	case model.User:
-		fmt.Print(x.Username)
-	}
-}
-
 func main() {
 
 	godotenv.Load()
@@ -45,9 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//api.RoutesBook(r, db)
+	api.RoutesBook(r, db)
 	api.RoutesUser(r, db)
-
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)
-
 }
