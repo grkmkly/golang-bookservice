@@ -110,7 +110,6 @@ func (db *Database) FindOneElementByID(item interface{}) (interface{}, error) {
 		}
 		return book, nil
 	} else if x, ok := item.(User); ok {
-		fmt.Print("Selam")
 		var user User
 		filter := bson.D{
 			{Key: "_id", Value: x.ObjectID},

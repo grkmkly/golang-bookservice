@@ -33,9 +33,7 @@ func registerUser(db *model.Database) http.HandlerFunc {
 		}
 		switch isHave {
 		case true:
-			fmt.Println("UsernameAvailable")
 		case false:
-			fmt.Println("UsernameNotAvailable")
 			resp.IsActive = false
 			jsonResponse, err := json.Marshal(&resp)
 			if err != nil {
@@ -58,6 +56,8 @@ func registerUser(db *model.Database) http.HandlerFunc {
 			log.Fatal(err)
 		}
 		resp.IsActive = true
+		resp.ID = u.ObjectID.Hex()
+		resp.Username = u.Username
 		jsonResponse, err := json.Marshal(&resp)
 		if err != nil {
 			log.Fatal(err)
@@ -88,6 +88,8 @@ func signinUser(db *model.Database) http.HandlerFunc {
 			case model.User:
 				if (x.Username == u.Username) && controls.CheckPassword(u.Password, x.Password) {
 					isCheck = true
+					resp.ID = x.ObjectID.Hex()
+					resp.Username = x.Username
 					break
 				}
 			default:
@@ -113,10 +115,75 @@ func signinUser(db *model.Database) http.HandlerFunc {
 	}
 }
 
+func getUsers(db *model.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		users, err := db.GetAllElements(model.User{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		var username []model.User
+		for _, v := range users {
+			switch x := v.(type) {
+			case model.User:
+				models := model.User{
+					ObjectID: x.ObjectID,
+					Username: x.Username,
+					Books:    x.Books,
+				}
+				username = append(username, models)
+			}
+		}
+		jsonUser, _ := json.Marshal(&username)
+		fmt.Fprint(w, string(jsonUser))
+	}
+}
+func getUser(db *model.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		vars := mux.Vars(r)
+		if vars["id"] == "" {
+			fmt.Fprint(w, "NotFoundId")
+			return
+		}
+		var err error
+		//resp, err := io.ReadAll(r.Body)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		var user model.User
+		user.ObjectID, err = primitive.ObjectIDFromHex(vars["id"])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// err = json.Unmarshal(resp, &user)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		findUser, err := db.FindOneElementByID(user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		switch x := findUser.(type) {
+		case model.User:
+			var model = model.User{
+				ObjectID: x.ObjectID,
+				Username: x.Username,
+				Books:    x.Books,
+			}
+			jsonResponse, err := json.Marshal(model)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprint(w, string(jsonResponse))
+		}
+	}
+}
+
 func RoutesUser(r *mux.Router, db *model.Database) {
 	r.HandleFunc("/registeruser", registerUser(db)).Methods("POST")
 	r.HandleFunc("/signinuser", signinUser(db)).Methods("POST")
-	//r.HandleFunc("/getbook/{id}", getBook(db)).Methods("GET")
-	//r.HandleFunc("/updatebook/{id}", updateBook(db)).Methods("PUT")
-	//r.HandleFunc("/deletebook/{id}", deleteBook(db)).Methods("DELETE")
+	r.HandleFunc("/getusers", getUsers(db)).Methods("GET")
+	r.HandleFunc("/getuser/{id}", getUser(db)).Methods("GET")
 }
