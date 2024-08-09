@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -211,6 +213,35 @@ func (db *Database) UpdateElementbyID(updateBook *Book, filterBook *Book) error 
 	_, err := db.Collection.UpdateOne(db.Ctx, filter, update)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+func (db *Database) AddbookUser(user User, book Book) error {
+	db.ControlItemTypeandSet(user)
+	u, err := db.FindOneElementByID(user)
+	if err != nil {
+		return err
+	}
+	var filterUser primitive.D
+	switch x := u.(type) {
+	case User:
+		filterUser = bson.D{
+			{Key: "_id", Value: x.ObjectID},
+		}
+	}
+	switch x := u.(type) {
+	case User:
+		x.Books = append(x.Books, book)
+		updateUser := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "Books", Value: x.Books},
+			}},
+		}
+		_, err := db.Collection.UpdateOne(db.Ctx, filterUser, updateUser)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
 	}
 	return nil
 }

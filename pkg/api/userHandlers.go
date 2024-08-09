@@ -180,10 +180,54 @@ func getUser(db *model.Database) http.HandlerFunc {
 		}
 	}
 }
+func addbookUser(db *model.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		isCheck := false
+		// Read Body
+		jsonRequest, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Body to struct
+		var usersbook model.Usersbook
+		err = json.Unmarshal(jsonRequest, &usersbook)
+		if err != nil {
+			log.Fatal(err)
+		}
+		u := model.User{
+			ObjectID: usersbook.UserId,
+		}
+		b := model.Book{
+			ObjectID: usersbook.BookId,
+		}
+		book, err := db.FindOneElementByID(b)
+		if err != nil {
+			log.Fatal(err)
+		}
+		switch x := book.(type) {
+		case model.Book:
+			err = db.AddbookUser(u, x)
+			if err != nil {
+				log.Fatal(err)
+			}
+			isCheck = true
+		}
+		var resp model.Response
+		resp.IsActive = isCheck
+		resp.ID = u.Username
+		jsonResponse, err := json.Marshal(resp)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Fprint(w, string(jsonResponse))
+	}
+}
 
 func RoutesUser(r *mux.Router, db *model.Database) {
 	r.HandleFunc("/registeruser", registerUser(db)).Methods("POST")
 	r.HandleFunc("/signinuser", signinUser(db)).Methods("POST")
 	r.HandleFunc("/getusers", getUsers(db)).Methods("GET")
 	r.HandleFunc("/getuser/{id}", getUser(db)).Methods("GET")
+	r.HandleFunc("/addbookuser", addbookUser(db)).Methods("POST")
 }
