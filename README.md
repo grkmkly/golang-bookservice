@@ -20,7 +20,6 @@
 ### 1. Gerekli araçları yükleyin  
 
 - Go ([https://go.dev/](https://go.dev/))  
-- MongoDB ([https://www.mongodb.com/](https://www.mongodb.com/))
 
 ### 2. Projeyi klonlayın  
 
