@@ -59,5 +59,4 @@ linkine girerek ya da o linke istek atarak ulaşabilirsiniz.
 Herhangi bir sorunuz varsa veya katkıda bulunmak isterseniz
 
 * E-posta: [kolaygorkem@outlook.com]
-* GitHub: [grkmkly](github.com/grkmkly)
 
